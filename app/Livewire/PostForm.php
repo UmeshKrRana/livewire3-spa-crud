@@ -6,10 +6,13 @@ use App\Models\Post;
 use Livewire\Component;
 use Livewire\Attributes\Validate;
 use Livewire\WithFileUploads;
+use Livewire\Attributes\Title;
 
 class PostForm extends Component
 {
     use WithFileUploads;
+
+    #[Title('Livewire 3 CRUD - Manage Posts')]
 
     public $post = null;
     public $isView = false;
@@ -23,10 +26,6 @@ class PostForm extends Component
     #[Validate('min:10', message: 'Post content must be minimum 10 chars long')]
     public $content;
 
-    #[Validate('required', message: 'Featured Image is required')]
-    #[Validate('image', message: 'Featured Image must be a valid Image')]
-    #[Validate('mimes:jpg,jpeg,png,svg,bmp,webp,gif', message: 'Featured Image accepts only jpg, jpeg, png, svg, bmp, webp and gif')]
-    #[Validate('max:2048', message: 'Featured Image must not be a larger than 2MB')]
     public $featuredImage;
 
     public function mount(Post $post) {
@@ -39,7 +38,21 @@ class PostForm extends Component
     }
 
     public function savePost() {
+
         $this->validate();
+
+        $rules = [
+            'featuredImage' => $this->post && $this->post->featured_image ? 'nullable|image|mimes:jpg,jpeg,png,svg,bmp,webp,gif|max:2048' : 'required|image|mimes:jpg,jpeg,png,svg,bmp,webp,gif|max:2048'
+        ];
+
+        $messages = [
+            'featuredImage.required' => 'Featured Image is required',
+            'featuredImage.image' => 'Featured Image must be a valid Image',
+            'featuredImage.mimes' => 'Featured Image accepts only jpg, jpeg, png, svg, bmp, webp and gif',
+            'featuredImage.max' => 'Featured Image must not be a larger than 2MB',
+        ];
+
+        $this->validate($rules, $messages);
 
         $imagePath = null;
 
@@ -48,21 +61,41 @@ class PostForm extends Component
             $imagePath = $this->featuredImage->storeAs('public/uploads', $imageName);
         }
 
-        $post = Post::create([
-            'title' => $this->title,
-            'content' => $this->content,
-            'featured_image' => $imagePath,
-        ]);
+        if ($this->post) {
+            $this->post->title = $this->title;
+            $this->post->content = $this->content;
 
-        if ($post) {
-            session()->flash('success', 'Post has been published successfully!');
+            if ($imagePath) {
+                $this->post->featured_image = $imagePath;
+            }
+
+            # Update Functionality
+            $updatePost = $this->post->save();
+
+            if ($updatePost) {
+                session()->flash('success', 'Post has been updated successfully!');
+            }
+            else {
+                session()->flash('error', 'Unable to update Post. Please try again!');
+            }
         }
+
         else {
-            session()->flash('error', 'Unable to create Post. Please try again!');
+            $post = Post::create([
+                'title' => $this->title,
+                'content' => $this->content,
+                'featured_image' => $imagePath,
+            ]);
+
+            if ($post) {
+                session()->flash('success', 'Post has been published successfully!');
+            }
+            else {
+                session()->flash('error', 'Unable to create Post. Please try again!');
+            }
         }
 
         return $this->redirect('/posts', navigate: true);
-
     }
 
     public function render()

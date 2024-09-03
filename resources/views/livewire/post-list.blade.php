@@ -26,16 +26,18 @@
     </div>
 
     {{-- Table post listing --}}
-    <div class="card shadow">
-        <div class="card-body mt-4 table-responsive">
+    <div class="card">
+        <div class="card-body mt-4 table-responsive shadow">
             <table class="table table-striped">
                 <thead>
-                    <th>#</th>
-                    <th>Featured Image</th>
-                    <th>Title</th>
-                    <th>Content</th>
-                    <th>Date</th>
-                    <th>Actions</th>
+                    <tr>
+                        <th>#</th>
+                        <th>Featured Image</th>
+                        <th>Title</th>
+                        <th>Content</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
                 </thead>
 
                 <tbody>
@@ -53,8 +55,8 @@
                                 <p><small><strong>Updated: </strong>{{ \Carbon\Carbon::parse($post->updated_at)->diffForHumans() }}</small></p>
                             </td>
                             <td>
-                                <a href="" class="btn btn-success btn-sm">Edit</a>
-                                <button type="button" class="btn btn-danger btn-sm">Delete</button>
+                                <a href="{{ route('posts.edit', $post->id) }}" wire:navigate class="btn btn-success btn-sm">Edit</a>
+                                <button wire:confirm="Are you sure, you want to delete?" wire:click="deletePost({{ $post->id }})" type="button" class="btn btn-danger btn-sm">Delete</button>
                             </td>
                         </tr>
                     @empty
