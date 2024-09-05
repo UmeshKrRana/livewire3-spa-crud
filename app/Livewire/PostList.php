@@ -15,12 +15,33 @@ class PostList extends Component
 
     #[Title('Livewire 3 CRUD - Posts Listing')]
 
+    public $searchTerm = null;
+    public $activePageNumber = 1;
+
+    /**
+     * Function: fetchPosts
+     * Description: This function will fetch the blog posts
+     * @param NA
+     * @return App\Models\Post
+     */
+    public function fetchPosts() {
+        return Post::where('title', 'like', '%' . $this->searchTerm . '%')
+        ->orWhere('content', 'like', '%' . $this->searchTerm . '%')
+        ->orderBy('id', 'DESC')->paginate(5);
+    }
+
     public function render()
     {
-        $posts = Post::orderBy('id', 'DESC')->paginate(5);
+        $posts = $this->fetchPosts();
         return view('livewire.post-list', compact('posts'));
     }
 
+    /**
+     * Function: deletePost
+     * Description: This function will delete the post
+     * @param App\Models\Post $post
+     * @return void
+     */
     public function deletePost(Post $post) {
         if ($post) {
 
@@ -41,6 +62,27 @@ class PostList extends Component
             session()->flash('error', 'Post not found. Please try again!');
         }
 
-        return $this->redirect('/posts', navigate: true);
+        $posts = $this->fetchPosts();
+
+        if ($posts->isEmpty() && $this->activePageNumber > 1) {
+            # Redirect to the Active page - 1 (Previous Page)
+            $this->gotoPage($this->activePageNumber - 1);
+        }
+        else {
+            # Redirect to the Active Page
+            $this->gotoPage($this->activePageNumber);
+        }
+
+        // return $this->redirect('/posts', navigate: true);
+    }
+
+    /**
+     * Function: updatingPage
+     * Description: Track the active page from pagination
+     * @param integer $pageNumber
+     * @return void
+     */
+    public function updatingPage($pageNumber) {
+        $this->activePageNumber = $pageNumber;
     }
 }
